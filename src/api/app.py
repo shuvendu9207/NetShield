@@ -13,6 +13,7 @@ from src.database.models import DetectionHistory, Alert
 from src.inference.predictor import Predictor
 from src.packet_capture.pcap_reader import read_pcap_flows
 from src.alerts.engine import AlertEngine
+from src.packet_capture.live_capture import LiveMonitor, get_interfaces
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 # Initialize Alert Engine
 alert_engine = AlertEngine(confidence_threshold=90.0)
+
+# Track active live monitors by interface name
+active_monitors: Dict[str, LiveMonitor] = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,8 +43,13 @@ async def lifespan(app: FastAPI):
         app.state.predictor = None
         
     yield
-    # Cleanup on shutdown (if any)
+    # Cleanup on shutdown (stop active packet sniffing threads)
     logger.info("Shutting down API server...")
+    for iface, monitor in list(active_monitors.items()):
+        if monitor.is_running():
+            logger.info(f"Stopping live monitor on interface: {iface}")
+            monitor.stop()
+    active_monitors.clear()
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -179,3 +188,56 @@ def get_detections(
     """Retrieves flow classification history, sorted by latest timestamp first."""
     detections = db.query(DetectionHistory).order_by(DetectionHistory.timestamp.desc()).offset(offset).limit(limit).all()
     return detections
+
+@app.get("/monitor/interfaces")
+def list_interfaces():
+    """Retrieves available network interface names on the system."""
+    interfaces = get_interfaces()
+    return {"interfaces": interfaces}
+
+@app.post("/monitor/start")
+def start_monitoring(interface: str = Query(...)):
+    """Starts live packet sniffing and classification on a specified network interface."""
+    if interface in active_monitors and active_monitors[interface].is_running():
+        return {"status": "success", "message": f"Monitoring already active on interface '{interface}'."}
+        
+    # Get predictor from app state
+    predictor = getattr(app.state, "predictor", None)
+    if not predictor:
+        raise HTTPException(
+            status_code=500,
+            detail="Predictor is not loaded. Please train the model before starting live monitoring."
+        )
+        
+    try:
+        monitor = LiveMonitor(interface=interface, predictor=predictor)
+        monitor.start()
+        active_monitors[interface] = monitor
+        return {"status": "success", "message": f"Live monitoring started on interface '{interface}'."}
+    except Exception as e:
+        logger.error(f"Failed to start monitoring on '{interface}': {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start monitoring on interface '{interface}': {str(e)}"
+        )
+
+@app.post("/monitor/stop")
+def stop_monitoring(interface: str = Query(...)):
+    """Stops live packet sniffing on a specified network interface."""
+    if interface not in active_monitors or not active_monitors[interface].is_running():
+        raise HTTPException(
+            status_code=400,
+            detail=f"No active live monitor found running on interface '{interface}'."
+        )
+        
+    try:
+        monitor = active_monitors[interface]
+        monitor.stop()
+        del active_monitors[interface]
+        return {"status": "success", "message": f"Live monitoring stopped on interface '{interface}'."}
+    except Exception as e:
+        logger.error(f"Failed to stop monitoring on '{interface}': {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to stop monitoring on interface '{interface}': {str(e)}"
+        )
