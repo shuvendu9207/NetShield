@@ -1,2 +1,54 @@
-# docker-compose.yml for NetShield
-# Will be implemented in Module 13: Dockerization
+version: '3.8'
+
+services:
+  # PostgreSQL database service
+  db:
+    image: postgres:15-alpine
+    container_name: netshield_db
+    restart: always
+    environment:
+      POSTGRES_USER: netshield
+      POSTGRES_PASSWORD: netshield_pass
+      POSTGRES_DB: netshield
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Ensures the database is ready before the API attempts to connect
+      test: ["CMD-SHELL", "pg_isready -U netshield -d netshield"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # NetShield FastAPI NIDS application service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: netshield_web
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      USE_SQLITE: "false"
+      DB_USER: netshield
+      DB_PASSWORD: netshield_pass
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: netshield
+      
+    # ----------------------------------------------------------------------------------
+    # PRODUCTION LIVE CAPTURE CONFIGURATION (Linux Hosts)
+    # To enable Scapy packet capture on actual host network interfaces, uncomment below:
+    # ----------------------------------------------------------------------------------
+    # network_mode: "host"
+    # cap_add:
+    #   - NET_ADMIN
+    # ----------------------------------------------------------------------------------
+
+volumes:
+  postgres_data:
