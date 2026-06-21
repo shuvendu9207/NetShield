@@ -6,23 +6,19 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # Setup logging
 logger = logging.getLogger(__name__)
 
-# Connection parameters with environment variable support and sensible defaults
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "netshield_db")
+# Determine database type (default to SQLite for local development out-of-the-box)
+USE_SQLITE = os.getenv("USE_SQLITE", "true").lower() == "true"
 
-# Construct PostgreSQL DATABASE_URL
-# Supports standard PostgreSQL connection URL format
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-# Fallback to SQLite database file for testing or if PostgreSQL is not available
-# This ensures that the application remains functional even in a local dev mode
-if os.getenv("USE_SQLITE", "false").lower() == "true":
+if USE_SQLITE:
     DATABASE_URL = "sqlite:///./netshield.db"
-    logger.info("Using SQLite database for testing.")
+    logger.info("Using SQLite database for NetShield.")
 else:
+    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "5432")
+    DB_NAME = os.getenv("DB_NAME", "netshield_db")
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     logger.info(f"Configuring PostgreSQL database connection: postgresql://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 # Create engine
