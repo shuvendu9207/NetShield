@@ -180,6 +180,9 @@ if __name__ == "__main__":
         def __getitem__(self, layer_name):
             return self
 
+        def __len__(self):
+            return self.length
+
     # Simulate 2 packets in a flow (1 forward, 1 backward)
     pkt1 = MockPacket("192.168.1.10", "10.0.0.1", 12345, 80, 6, 64, 0x02, 64, 100.0) # SYN (Fwd)
     pkt2 = MockPacket("10.0.0.1", "192.168.1.10", 80, 12345, 6, 128, 0x12, 60, 100.1) # SYN-ACK (Bwd)
