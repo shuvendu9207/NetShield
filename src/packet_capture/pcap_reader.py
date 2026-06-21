@@ -60,9 +60,9 @@ if __name__ == "__main__":
         logger.info("Generating a temporary test PCAP file with Scapy...")
         # Simulate a simple TCP handshake exchange
         packets = [
-            IP(src="192.168.1.50", dst="10.0.0.99")/TCP(sport=54321, dport=80, flags="S", seq=1000, ttl=64),
-            IP(src="10.0.0.99", dst="192.168.1.50")/TCP(sport=80, dport=54321, flags="SA", seq=2000, ack=1001, ttl=128),
-            IP(src="192.168.1.50", dst="10.0.0.99")/TCP(sport=54321, dport=80, flags="A", seq=1001, ack=2001, ttl=64)
+            IP(src="192.168.1.50", dst="10.0.0.99", ttl=64)/TCP(sport=54321, dport=80, flags="S", seq=1000),
+            IP(src="10.0.0.99", dst="192.168.1.50", ttl=128)/TCP(sport=80, dport=54321, flags="SA", seq=2000, ack=1001),
+            IP(src="192.168.1.50", dst="10.0.0.99", ttl=64)/TCP(sport=54321, dport=80, flags="A", seq=1001, ack=2001)
         ]
         # Set packet timestamps manually for flow duration calculation
         packets[0].time = 1718973600.00
