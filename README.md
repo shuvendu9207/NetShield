@@ -115,6 +115,8 @@ The exact same feature extraction schema is guaranteed across training, PCAP upl
    uvicorn src.api.app:app --reload --host 127.0.0.1 --port 8000
    ```
 
+![FastAPI Server Startup](docs/images/server_startup.png)
+
 ---
 
 ## 5. Docker Deployment Setup
@@ -141,7 +143,9 @@ By default, Docker containers operate on isolated virtual networks. To run live 
 ## 6. API Documentation & Swagger Usage
 
 When the server is running, the interactive OpenAPI Swagger page is available at:
-👉 **[http://localhost:8000/docs](http://localhost:8000/docs)**
+ **[http://localhost:8000/docs](http://localhost:8000/docs)**
+
+![OpenAPI Swagger UI](docs/images/swagger_ui.png)
 
 ### Summary of REST API Endpoints:
 
@@ -156,6 +160,8 @@ When the server is running, the interactive OpenAPI Swagger page is available at
     "model_loaded": true
   }
   ```
+
+![API Health Response](docs/images/api_health.png)
 
 #### 2. PCAP Traffic Analysis & Classification
 * **Method**: `POST`
@@ -204,6 +210,10 @@ When the server is running, the interactive OpenAPI Swagger page is available at
 * **Route**: `/monitor/stop`
 * **Parameters**: `interface` (Query string)
 
+#### API Interaction Examples (PowerShell)
+
+![API Endpoint Queries via PowerShell](docs/images/terminal_testing.png)
+
 ---
 
 ## 7. Automated Testing Suite
@@ -213,6 +223,8 @@ To run the tests:
 ```bash
 pytest -v
 ```
+
+![Pytest Test Execution Results](docs/images/pytest_results.png)
 
 The test coverage spans:
 1. **conftest.py**: Shared testing context creating in-memory SQLite instances using `StaticPool`.
