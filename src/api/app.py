@@ -198,6 +198,14 @@ def list_interfaces():
 @app.post("/monitor/start")
 def start_monitoring(interface: str = Query(...)):
     """Starts live packet sniffing and classification on a specified network interface."""
+    # Validate that the interface is valid on this host
+    valid_interfaces = get_interfaces()
+    if interface not in valid_interfaces:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid interface '{interface}'. Please choose one of: {valid_interfaces}"
+        )
+
     if interface in active_monitors and active_monitors[interface].is_running():
         return {"status": "success", "message": f"Monitoring already active on interface '{interface}'."}
         
