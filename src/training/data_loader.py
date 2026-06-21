@@ -219,8 +219,20 @@ def map_labels(df: pd.DataFrame) -> pd.DataFrame:
     """Maps raw labels to the 6 target categories and filters out any undefined classes."""
     logger.info("Mapping and filtering labels...")
     
-    # Map using Case-Insensitive mapping for robustness
-    df["Label_Mapped"] = df["Label"].map(lambda x: LABEL_MAPPING.get(x, LABEL_MAPPING.get(x.upper(), None)))
+    # Standardize labels and strip whitespace
+    labels = df["Label"].astype(str).str.strip()
+    
+    # Create mapped series using substring checks to bypass encoding/dash issues
+    mapped = pd.Series(index=df.index, dtype=object)
+    
+    mapped[labels.str.upper().str.contains("BENIGN")] = "Benign"
+    mapped[labels.str.upper().str.contains("DDOS")] = "DDoS"
+    mapped[labels.str.upper().str.contains("PORTSCAN")] = "PortScan"
+    mapped[labels.str.upper().str.contains("BOT")] = "Bot"
+    mapped[labels.str.upper().str.contains("PATATOR") | labels.str.upper().str.contains("BRUTE")] = "BruteForce"
+    mapped[labels.str.upper().str.contains("WEB")] = "WebAttack"
+    
+    df["Label_Mapped"] = mapped
     
     # Log unmatched labels
     unmatched = df[df["Label_Mapped"].isna()]["Label"].unique()
