@@ -134,7 +134,14 @@ if __name__ == "__main__":
             
     finally:
         db.close()
+        # Dispose of engine connection pool to release file locks on Windows
+        from src.database.connection import engine
+        engine.dispose()
+        
         # Clean up database file after test
         if os.path.exists("netshield.db"):
-            os.remove("netshield.db")
-            logger.info("Temporary test database 'netshield.db' cleaned up.")
+            try:
+                os.remove("netshield.db")
+                logger.info("Temporary test database 'netshield.db' cleaned up.")
+            except Exception as clean_err:
+                logger.error(f"Cleanup warning (could not delete file): {clean_err}")
