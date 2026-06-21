@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # Add src to python path to ensure imports work correctly when running pytest from the root folder
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -18,7 +19,13 @@ TEST_DATABASE_URL = "sqlite:///:memory:"
 @pytest.fixture(scope="function")
 def db_session():
     """Provides a clean in-memory database session for a test function."""
-    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+    # Using StaticPool is critical for sqlite:///:memory: to keep the same connection open
+    # across multiple operations/requests, preserving the in-memory tables.
+    engine = create_engine(
+        TEST_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
     # Create tables
