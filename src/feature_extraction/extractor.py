@@ -58,6 +58,11 @@ class Flow:
         avg_ttl = int(self.total_ttl / self.packet_count) if self.packet_count > 0 else 64
         
         return {
+            "src_ip": self.src_ip,
+            "dst_ip": self.dst_ip,
+            "src_port": self.src_port,
+            "dst_port": self.dst_port,
+            "protocol": self.protocol,
             "Protocol": self.protocol,
             "Source Port": self.src_port,
             "Destination Port": self.dst_port,

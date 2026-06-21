@@ -2,6 +2,8 @@ import os
 import logging
 from typing import List, Dict, Any
 from scapy.utils import PcapReader
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP, UDP
 
 from src.feature_extraction.extractor import FlowTracker
 
