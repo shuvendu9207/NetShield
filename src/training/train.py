@@ -114,22 +114,43 @@ def run_training_pipeline(processed_dir: str = PROCESSED_DATA_DIR):
     rf_model = train_random_forest(X_train, y_train)
     logger.info("Evaluating Random Forest on test set...")
     y_pred_rf = rf_model.predict(X_test)
-    evaluate_predictions(y_test, y_pred_rf, classes)
+    rf_metrics = evaluate_predictions(y_test, y_pred_rf, classes)
     
     # 11. Train XGBoost & 12. Evaluate
     xgb_model = train_xgboost(X_train, y_train, len(classes))
     logger.info("Evaluating XGBoost on test set...")
     y_pred_xgb = xgb_model.predict(X_test)
-    evaluate_predictions(y_test, y_pred_xgb, classes)
+    xgb_metrics = evaluate_predictions(y_test, y_pred_xgb, classes)
     
-    # Note: Model persistence (saving models, scaler, encoder) will be fully implemented in Module 6.
-    # We will save intermediate assets for testing purposes.
+    # 13. Save Artifacts (Module 6: Model Persistence)
     os.makedirs(MODELS_DIR, exist_ok=True)
-    joblib.dump(rf_model, os.path.join(MODELS_DIR, "rf_model.pkl"))
-    joblib.dump(xgb_model, os.path.join(MODELS_DIR, "xgb_model.pkl"))
+    
+    # Compare F1 Weighted scores to select the best model
+    rf_f1 = rf_metrics["f1_weighted"]
+    xgb_f1 = xgb_metrics["f1_weighted"]
+    
+    logger.info(f"Random Forest Weighted F1: {rf_f1:.6f}")
+    logger.info(f"XGBoost Weighted F1: {xgb_f1:.6f}")
+    
+    if xgb_f1 > rf_f1:
+        best_model = xgb_model
+        best_model_name = "XGBoost"
+    else:
+        best_model = rf_model
+        best_model_name = "Random Forest"
+        
+    logger.info(f"Saving champion model ({best_model_name}) as model.pkl...")
+    
+    # Save standard required artifacts
+    joblib.dump(best_model, os.path.join(MODELS_DIR, "model.pkl"))
     joblib.dump(scaler, os.path.join(MODELS_DIR, "scaler.pkl"))
     joblib.dump(le, os.path.join(MODELS_DIR, "label_encoder.pkl"))
-    logger.info("Saved temporary training artifacts to models/ directory.")
+    
+    # Save individual models for reference
+    joblib.dump(rf_model, os.path.join(MODELS_DIR, "rf_model.pkl"))
+    joblib.dump(xgb_model, os.path.join(MODELS_DIR, "xgb_model.pkl"))
+    
+    logger.info(f"Successfully persisted final artifacts (model.pkl, scaler.pkl, label_encoder.pkl) to '{MODELS_DIR}/'.")
 
 if __name__ == "__main__":
     run_training_pipeline()
