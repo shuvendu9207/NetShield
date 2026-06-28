@@ -15,7 +15,9 @@ venv/
 
 data/raw/
 data/processed/*.csv
-models/*.pkl
+# Allow committing trained models for production deployment
+# models/*.pkl
+
 
 *.log
 
