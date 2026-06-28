@@ -30,5 +30,6 @@ COPY models/ /app/models/
 # Expose FastAPI REST API port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application (respects the PORT env variable if provided, e.g. on Render/Railway)
+CMD uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
+
